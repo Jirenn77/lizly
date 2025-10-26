@@ -1,9 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export', // Static export for deployment
-  trailingSlash: true,
-  images: {
-    unoptimized: true
-  }
+  // App Router deployment on Vercel - no static export needed
 }
 export default nextConfig
