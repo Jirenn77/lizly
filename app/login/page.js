@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation'; 
+import { useRouter, useSearchParams } from 'next/navigation'; 
 import axios from 'axios';
+import { setAuthToken } from '../lib/auth';
 
 export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const router = useRouter();
+    const searchParams = useSearchParams();
 
     const handleSubmit = async (e) => {
       e.preventDefault();
@@ -22,9 +24,16 @@ export default function Login() {
           console.log("response sa login" , res);
   
           if (res.data !== false) {
-              router.push('/'); // Redirect to home page
+              // Set authentication token
+              setAuthToken('authenticated');
+              
+              // Check if there's a redirect URL
+              const redirectUrl = searchParams.get('redirect');
+              
+              // Redirect to the requested page or home
+              router.push(redirectUrl || '/'); 
           } else {
-              setError(data.error);
+              setError('Invalid credentials');
           }
       } catch (err) {
           console.error(err);

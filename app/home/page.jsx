@@ -10,6 +10,7 @@ import { Menu } from "@headlessui/react";
 import { BarChart, BarChart3, ChevronLeft, PieChart, X } from "lucide-react";
 import { User, Settings, LogOut, Tag } from "lucide-react";
 import { Folder, ClipboardList, Factory, Calendar, MapPin } from "lucide-react";
+import { logout } from "../lib/auth";
 import {
   Home,
   Users,
@@ -198,8 +199,7 @@ export default function Dashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    window.location.href = "/";
+    logout();
   };
 
   // Handle branch selection
