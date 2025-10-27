@@ -42,6 +42,30 @@ export default function Dashboard() {
 
   const todayStr = new Date().toISOString().slice(0, 10);
 
+  // Authentication check
+  useEffect(() => {
+    const checkAuth = () => {
+      const userData = localStorage.getItem("user");
+      if (!userData) {
+        router.replace("/");
+        return;
+      }
+
+      try {
+        const user = JSON.parse(userData);
+        // If user is admin, redirect to admin dashboard
+        if (user.role === 'admin') {
+          router.replace("/home");
+        }
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+        router.replace("/");
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
   const [dashboardData, setDashboardData] = useState({
     topServices: [],
     revenueByService: [],

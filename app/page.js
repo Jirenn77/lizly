@@ -36,6 +36,18 @@ export default function Login() {
   const passwordRef = useRef(null);
   const identifierRef = useRef(null);
 
+  // Helper function to set authentication cookie
+  const setAuthCookie = (userData) => {
+    document.cookie = `auth-token=${JSON.stringify(userData)}; path=/; SameSite=Lax`;
+    document.cookie = `isAuthenticated=true; path=/; SameSite=Lax`;
+  };
+
+  // Helper function to clear authentication cookie
+  const clearAuthCookie = () => {
+    document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'isAuthenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  };
+
   useEffect(() => {
     generateCaptcha();
     fetchBranches();
@@ -140,10 +152,52 @@ export default function Login() {
     return { isValid: true };
   };
 
+  useEffect(() => {
+    // Check if user is already logged in and redirect immediately
+    const checkAuthAndRedirect = () => {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          // Redirect based on role
+          if (user.role === 'admin') {
+            window.location.replace("/home");
+          } else if (user.role === 'receptionist') {
+            window.location.replace("/home2");
+          }
+        } catch (error) {
+          console.error("Error parsing user data:", error);
+        }
+      }
+    };
+
+    checkAuthAndRedirect();
+
+    // Listen for focus events (when user comes back to the tab)
+    const handleFocus = () => {
+      checkAuthAndRedirect();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // Prevent back button from navigating to login page
+    const handlePopState = () => {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        window.history.forward();
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [router]);
+
   const handleSubmit = async (e) => {
   e.preventDefault();
 
-  // Clear ALL previous data first - INCLUDING PHP SESSIONS
+  // Clear ALL previous data first - INCLUDING PHP SESSIONS AND COOKIES
   localStorage.removeItem("user");
   localStorage.removeItem("user_id");
   localStorage.removeItem("user_name");
@@ -152,6 +206,7 @@ export default function Login() {
   localStorage.removeItem("branch_name");
   localStorage.removeItem("loginAttempts");
   sessionStorage.clear();
+  clearAuthCookie(); // Clear authentication cookies
 
   // Clear PHP session by calling logout on BOTH endpoints before login
   try {
@@ -237,9 +292,12 @@ export default function Login() {
       
       localStorage.setItem("user", JSON.stringify(adminUserData));
       localStorage.setItem("loginAttempts", "0");
+      setAuthCookie(adminUserData); // Set authentication cookie
       
       console.log("Admin login - stored user data:", adminUserData);
-      router.push("/home");
+      
+      // Use window.location.replace to completely remove login page from history
+      window.location.replace("/home");
       return;
     } else {
       // Admin login returned success but no admin data
@@ -343,13 +401,15 @@ export default function Login() {
           status: userData.status || 'Active'
         };
         
-        localStorage.setItem("user", JSON.stringify(receptionistUserData));
-        console.log("Receptionist login - stored user data:", receptionistUserData);
+      localStorage.setItem("user", JSON.stringify(receptionistUserData));
+      localStorage.setItem("loginAttempts", "0");
+      setAuthCookie(receptionistUserData); // Set authentication cookie
+      console.log("Receptionist login - stored user data:", receptionistUserData);
         
       } catch (_) {}
       
-      localStorage.setItem("loginAttempts", "0");
-      router.push("/home2");
+      // Use window.location.replace to completely remove login page from history
+      window.location.replace("/home2");
     } else {
       if (res.data.code === 'BRANCH_MISMATCH') {
         toast.error("User not assigned to this branch. Please select the correct branch.");

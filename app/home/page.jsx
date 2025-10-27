@@ -10,7 +10,6 @@ import { Menu } from "@headlessui/react";
 import { BarChart, BarChart3, ChevronLeft, PieChart, X } from "lucide-react";
 import { User, Settings, LogOut, Tag } from "lucide-react";
 import { Folder, ClipboardList, Factory, Calendar, MapPin } from "lucide-react";
-import { logout } from "../lib/auth";
 import {
   Home,
   Users,
@@ -47,6 +46,30 @@ export default function Dashboard() {
   const [branches, setBranches] = useState([]); // Store branches separately
 
   const todayStr = new Date().toISOString().slice(0, 10);
+
+  // Authentication check
+  useEffect(() => {
+    const checkAuth = () => {
+      const userData = localStorage.getItem("user");
+      if (!userData) {
+        router.replace("/");
+        return;
+      }
+
+      try {
+        const user = JSON.parse(userData);
+        // If user is not admin, redirect to their respective dashboard
+        if (user.role === 'receptionist') {
+          router.replace("/home2");
+        }
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+        router.replace("/");
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   const [dashboardData, setDashboardData] = useState({
     topServices: [],
@@ -199,7 +222,8 @@ export default function Dashboard() {
   };
 
   const handleLogout = () => {
-    logout();
+    localStorage.removeItem("authToken");
+    window.location.href = "/";
   };
 
   // Handle branch selection
