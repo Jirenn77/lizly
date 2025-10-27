@@ -51,6 +51,7 @@ export default function Memberships() {
   const [showSummary, setShowSummary] = useState(false);
   const servicesPerPage = 12;
   const [allServices, setAllServices] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
   const [newMembership, setNewMembership] = useState({
     name: "Basic", // Default to "Basic" to match type
     type: "basic",
@@ -67,7 +68,7 @@ export default function Memberships() {
 
   const fetchMemberships = async () => {
     try {
-      const res = await fetch("http://localhost/API/memberships.php");
+      const res = await fetch("https://api.lizlyskincare.sbs/memberships.php");
       const data = await res.json();
 
       if (Array.isArray(data)) {
@@ -83,6 +84,41 @@ export default function Memberships() {
   };
 
   useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        // Try to get from localStorage first
+        const userData = localStorage.getItem("user");
+        if (userData) {
+          try {
+            const user = JSON.parse(userData);
+            setCurrentUser(user);
+          } catch (error) {
+            console.error("Error parsing user data from localStorage:", error);
+          }
+        }
+
+        // Also fetch from API to get complete user data
+        const currentUserResponse = await fetch(
+          "https://api.lizlyskincare.sbs/branches.php?action=user",
+          {
+            credentials: "include",
+          }
+        );
+
+        if (currentUserResponse.ok) {
+          const currentUserData = await currentUserResponse.json();
+          setCurrentUser(currentUserData);
+          localStorage.setItem("user", JSON.stringify(currentUserData));
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
+  useEffect(() => {
     fetchMemberships();
   }, []);
 
@@ -92,7 +128,7 @@ export default function Memberships() {
       console.log(`Fetching premium services for: ${membershipType}`);
 
       const res = await fetch(
-        `http://localhost/API/servicegroup.php?action=premium_services&membership_type=${membershipType}`
+        `https://api.lizlyskincare.sbs/servicegroup.php?action=premium_services&membership_type=${membershipType}`
       );
 
       if (!res.ok) {
@@ -218,7 +254,7 @@ export default function Memberships() {
         duration: 12, // Default duration as shown in your existing records
       };
 
-      const res = await fetch("http://localhost/API/memberships.php", {
+      const res = await fetch("https://api.lizlyskincare.sbs/memberships.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(membershipToSend),
@@ -297,7 +333,7 @@ export default function Memberships() {
               : editMembership.discount || "0",
       };
 
-      const res = await fetch(`http://localhost/API/memberships.php`, {
+      const res = await fetch(`https://api.lizlyskincare.sbs/memberships.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -590,7 +626,7 @@ export default function Memberships() {
             className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-lg font-bold cursor-pointer hover:bg-amber-600 transition-colors"
             onClick={() => setIsProfileOpen(!isProfileOpen)}
           >
-            R
+            {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : "R"}
           </div>
           <AnimatePresence>
             {isProfileOpen && (
@@ -881,8 +917,10 @@ export default function Memberships() {
                     <User size={16} />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Reception User</p>
-                    <p className="text-xs text-emerald-300">Receptionist</p>
+                    <p className="text-sm font-medium">{currentUser?.name || "Reception User"}</p>
+                    <p className="text-xs text-emerald-300">
+                      {currentUser?.role === "admin" ? "Administrator" : currentUser?.role === "receptionist" ? "Receptionist" : "User"}
+                    </p>
                   </div>
                 </div>
                 <button className="text-emerald-300 hover:text-white transition-colors">

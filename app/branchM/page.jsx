@@ -112,7 +112,7 @@ export default function BranchManagementPage() {
     };
 
     const res = await fetch(
-      `https://api.lizlyskincare.sbs/API/branches.php?action=update&id=${updatedBranch.id}`,
+      `https://api.lizlyskincare.sbs/branches.php?action=update&id=${updatedBranch.id}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -144,7 +144,7 @@ export default function BranchManagementPage() {
         return;
       }
 
-      const response = await fetch("https://api.lizlyskincare.sbs/API/branches.php?action=add", {
+      const response = await fetch("https://api.lizlyskincare.sbs/branches.php?action=add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -158,8 +158,8 @@ export default function BranchManagementPage() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Failed to add branch");
 
-      // ✅ Use the actual branch object from backend
-      setBranches((prev) => [...prev, result.branch]);
+      // ✅ Refetch branches to get the complete updated list
+      await fetchBranches();
 
       // Reset form + close modal
       setIsModalOpen(false);
@@ -231,12 +231,6 @@ export default function BranchManagementPage() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                <Link
-                  href="/profiles"
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 w-full text-gray-700"
-                >
-                  <User size={16} /> Profile
-                </Link>
                 <Link
                   href="/roles"
                   className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 w-full text-gray-700"

@@ -453,7 +453,7 @@ export default function ServiceOrderPage() {
   useEffect(() => {
     const fetchBundleServices = async () => {
       try {
-        const response = await fetch("https://api.lizlyskincare.sbs/API/bundles.php");
+        const response = await fetch("https://api.lizlyskincare.sbs/bundles.php");
         if (!response.ok) throw new Error("Failed to fetch bundle services");
 
         const data = await response.json();
@@ -540,7 +540,7 @@ export default function ServiceOrderPage() {
   useEffect(() => {
     const fetchMembershipTemplates = async () => {
       try {
-        const res = await fetch("https://api.lizlyskincare.sbs/API/memberships.php");
+        const res = await fetch("https://api.lizlyskincare.sbs/memberships.php");
         const data = await res.json();
         setMembershipTemplates(data);
       } catch (error) {
@@ -733,7 +733,7 @@ export default function ServiceOrderPage() {
     };
 
     try {
-      const response = await fetch("https://api.lizlyskincare.sbs/API/saveAcquire.php", {
+      const response = await fetch("https://api.lizlyskincare.sbs/saveAcquire.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData), // Send the complete orderData
@@ -887,7 +887,7 @@ export default function ServiceOrderPage() {
       };
 
       const response = await fetch(
-        "https://api.lizlyskincare.sbs/API/customers.php?action=add",
+        "https://api.lizlyskincare.sbs/customers.php?action=add",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -925,7 +925,7 @@ export default function ServiceOrderPage() {
           body.duration = calculateDuration(membershipForm.validTo);
         }
 
-        const membershipRes = await fetch("https://api.lizlyskincare.sbs/API/members.php", {
+        const membershipRes = await fetch("https://api.lizlyskincare.sbs/members.php", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
@@ -1014,7 +1014,7 @@ export default function ServiceOrderPage() {
 
     try {
       const response = await fetch(
-        "https://api.lizlyskincare.sbs/API/customers.php?action=add",
+        "https://api.lizlyskincare.sbs/customers.php?action=add",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1083,7 +1083,7 @@ export default function ServiceOrderPage() {
       if (!userData) {
         try {
           const currentUserResponse = await fetch(
-            "https://api.lizlyskincare.sbs/API/branches.php?action=user",
+            "https://api.lizlyskincare.sbs/branches.php?action=user",
             {
               credentials: "include",
             }
@@ -1146,7 +1146,7 @@ export default function ServiceOrderPage() {
         body.duration = calculateDuration(upgradeMembershipForm.validTo);
       }
 
-      const response = await fetch("https://api.lizlyskincare.sbs/API/members.php", {
+      const response = await fetch("https://api.lizlyskincare.sbs/members.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1461,8 +1461,10 @@ export default function ServiceOrderPage() {
                     <User size={16} />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Reception User</p>
-                    <p className="text-xs text-emerald-300">Receptionist</p>
+                    <p className="text-sm font-medium">{currentUser?.name || "Reception User"}</p>
+                    <p className="text-xs text-emerald-300">
+                      {currentUser?.role === "admin" ? "Administrator" : currentUser?.role === "receptionist" ? "Receptionist" : "User"}
+                    </p>
                   </div>
                 </div>
                 <button className="text-emerald-300 hover:text-white transition-colors"
@@ -1493,7 +1495,7 @@ export default function ServiceOrderPage() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">
-                  Service Acquisition
+                  Service Acquire
                 </h1>
                 <p className="text-sm text-gray-500 mt-1">
                   Process customer service purchases

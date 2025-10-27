@@ -104,7 +104,7 @@ export default function Memberships() {
       console.log(`Fetching premium services for: ${membershipType}`);
 
       const res = await fetch(
-        `http://localhost/API/servicegroup.php?action=premium_services&membership_type=${membershipType}`
+        `https://api.lizlyskincare.sbs/servicegroup.php?action=premium_services&membership_type=${membershipType}`
       );
 
       if (!res.ok) {
@@ -238,7 +238,7 @@ export default function Memberships() {
 
     console.log("Sending membership data:", membershipToSend);
 
-    const res = await fetch("http://localhost/API/memberships.php", {
+    const res = await fetch("https://api.lizlyskincare.sbs/memberships.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(membershipToSend),
@@ -336,7 +336,7 @@ const handleEdit = async (id) => {
             : editMembership.discount || "0",
     };
 
-    const res = await fetch(`http://localhost/API/memberships.php`, {
+    const res = await fetch(`https://api.lizlyskincare.sbs/memberships.php`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -633,12 +633,6 @@ const handleEdit = async (id) => {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                <Link
-                  href="/profiles"
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 w-full text-gray-700"
-                >
-                  <User size={16} /> Profile
-                </Link>
                 <Link
                   href="/roles"
                   className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 w-full text-gray-700"

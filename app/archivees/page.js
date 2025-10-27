@@ -58,7 +58,7 @@ export default function ArchivePage() {
   const fetchArchivedCustomers = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("http://localhost/API/archive.php?action=get");
+      const response = await fetch("https://api.lizlyskincare.sbs/archive.php?action=get");
       if (!response.ok) throw new Error("Failed to fetch archived customers");
       const data = await response.json();
       setArchivedCustomers(Array.isArray(data) ? data : []);
@@ -117,7 +117,7 @@ const performRestore = async (archiveId, customerName) => {
     // Show loading toast
     const loadingToast = toast.loading(`Restoring ${customerName}...`);
     
-    const response = await fetch("http://localhost/API/archive.php?action=restore", {
+    const response = await fetch("https://api.lizlyskincare.sbs/archive.php?action=restore", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ archive_id: archiveId })
@@ -362,12 +362,6 @@ const performArchive = async () => {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                <Link
-                  href="/profiles"
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 w-full text-gray-700"
-                >
-                  <User size={16} /> Profile
-                </Link>
                 <Link
                   href="/roles"
                   className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 w-full text-gray-700"

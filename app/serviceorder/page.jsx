@@ -453,7 +453,7 @@ export default function ServiceOrderPage() {
   useEffect(() => {
     const fetchBundleServices = async () => {
       try {
-        const response = await fetch("https://api.lizlyskincare.sbs/API/bundles.php");
+        const response = await fetch("https://api.lizlyskincare.sbs/bundles.php");
         if (!response.ok) throw new Error("Failed to fetch bundle services");
 
         const data = await response.json();
@@ -551,8 +551,11 @@ export default function ServiceOrderPage() {
     fetchMembershipTemplates();
   }, []);
 
-  const totalAmount = selectedServices.reduce(
-    (sum, s) => sum + parseFloat(s.price),
+  const calculatedSubtotal = Math.max(
+    selectedServices.reduce(
+      (sum, service) => sum + service.price * (service.quantity || 1),
+      0
+    ),
     0
   );
 
@@ -561,18 +564,11 @@ export default function ServiceOrderPage() {
   const discountReduction = (() => {
     if (!discount) return 0;
     if (discount.discount_type === "percentage") {
-      return (totalAmount * discount.value) / 100;
+      const discountValue = parseFloat(discount.value) || 0;
+      return (calculatedSubtotal * discountValue) / 100;
     }
-    return discount.value;
+    return parseFloat(discount.value) || 0;
   })();
-
-  const calculatedSubtotal = Math.max(
-    selectedServices.reduce(
-      (sum, service) => sum + service.price * (service.quantity || 1),
-      0
-    ),
-    0
-  );
 
   const premiumServiceIds = membershipServices.map((s) => s.id);
 
@@ -656,7 +652,7 @@ export default function ServiceOrderPage() {
 
     // Get current user data
     const currentUserResponse = await fetch(
-      "https://api.lizlyskincare.sbs/API/branches.php?action=user",
+      "https://api.lizlyskincare.sbs/branches.php?action=user",
       {
         credentials: "include",
       }
@@ -733,7 +729,7 @@ export default function ServiceOrderPage() {
     };
 
     try {
-      const response = await fetch("https://api.lizlyskincare.sbs/API/saveAcquire.php", {
+      const response = await fetch("https://api.lizlyskincare.sbs/saveAcquire.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData), // Send the complete orderData
@@ -887,7 +883,7 @@ export default function ServiceOrderPage() {
       };
 
       const response = await fetch(
-        "https://api.lizlyskincare.sbs/API/customers.php?action=add",
+        "https://api.lizlyskincare.sbs/customers.php?action=add",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -925,7 +921,7 @@ export default function ServiceOrderPage() {
           body.duration = calculateDuration(membershipForm.validTo);
         }
 
-        const membershipRes = await fetch("https://api.lizlyskincare.sbs/API/members.php", {
+        const membershipRes = await fetch("https://api.lizlyskincare.sbs/members.php", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
@@ -1014,7 +1010,7 @@ export default function ServiceOrderPage() {
 
     try {
       const response = await fetch(
-        "https://api.lizlyskincare.sbs/API/customers.php?action=add",
+        "https://api.lizlyskincare.sbs/customers.php?action=add",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1083,7 +1079,7 @@ export default function ServiceOrderPage() {
       if (!userData) {
         try {
           const currentUserResponse = await fetch(
-            "https://api.lizlyskincare.sbs/API/branches.php?action=user",
+            "https://api.lizlyskincare.sbs/branches.php?action=user",
             {
               credentials: "include",
             }

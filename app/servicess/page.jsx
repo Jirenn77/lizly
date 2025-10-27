@@ -68,11 +68,13 @@ export default function ServiceGroupsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedGroupForService, setSelectedGroupForService] = useState(null);
   const [newService, setNewService] = useState({
     name: "",
     price: "",
     duration: "",
     description: "",
+    group_id: null,
   });
   const [isAddGroupModalOpen, setIsAddGroupModalOpen] = useState(false);
   const [newGroup, setNewGroup] = useState({
@@ -440,15 +442,25 @@ export default function ServiceGroupsPage() {
   };
 
   const handleAddService = async () => {
-    if (!selectedGroup || !newService.name || !newService.price) {
+    // Determine which group to use: selectedGroup (from side panel) or selectedGroupForService (from All Services tab)
+    const targetGroup = selectedGroup || selectedGroupForService;
+    const groupIdToUse = targetGroup?.id || targetGroup?.group_id || newService.group_id;
+    
+    if (!newService.name || !newService.price) {
       toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    // If no group is selected
+    if (!groupIdToUse) {
+      toast.error("Please select a service group.");
       return;
     }
 
     // Find the latest group data from state
     const currentGroup = serviceGroups.find(
       (g) =>
-        (g.id || g.group_id) === (selectedGroup.id || selectedGroup.group_id)
+        (g.id || g.group_id) === groupIdToUse
     );
 
     const groupServices = currentGroup?.services || [];
@@ -469,13 +481,13 @@ export default function ServiceGroupsPage() {
       price: parseFloat(newService.price),
       description: newService.description?.trim() || null,
       duration: parseInt(newService.duration) || null,
-      category: selectedGroup.group_name,
+      category: currentGroup?.group_name,
     };
 
     try {
       console.log("Sending:", {
         service: serviceToAdd,
-        group_id: selectedGroup.id || selectedGroup.group_id,
+        group_id: groupIdToUse,
       });
 
       const response = await fetch(
@@ -485,7 +497,7 @@ export default function ServiceGroupsPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             service: serviceToAdd,
-            group_id: selectedGroup.id || selectedGroup.group_id,
+            group_id: groupIdToUse,
           }),
         }
       );
@@ -493,38 +505,54 @@ export default function ServiceGroupsPage() {
       const result = await response.json();
 
       if (result.success) {
-        const newServiceWithId = { ...serviceToAdd, id: result.service_id };
+        // Refetch data to get updated state
+        const fetchServiceGroups = async () => {
+          try {
+            const response = await fetch(
+              "https://api.lizlyskincare.sbs/servicegroup.php?action=get_groups_with_services"
+            );
+            if (!response.ok) {
+              throw new Error("Failed to fetch service groups");
+            }
+            const data = await response.json();
 
-        // ✅ Update state immediately
-        const updatedGroups = serviceGroups.map((group) =>
-          (group.id || group.group_id) ===
-          (selectedGroup.id || selectedGroup.group_id)
-            ? {
+            if (Array.isArray(data)) {
+              const updatedData = data.map((group) => ({
                 ...group,
-                services: [...group.services, newServiceWithId],
-                servicesCount: group.services.length + 1,
-                averagePrice: (
-                  [...group.services, newServiceWithId].reduce(
-                    (acc, s) => acc + parseFloat(s.price || 0),
-                    0
-                  ) / ([...group.services, newServiceWithId].length || 1)
-                ).toFixed(2),
-              }
-            : group
-        );
+                servicesCount: group.services?.length || 0,
+                averagePrice: group.services?.length
+                  ? (
+                      group.services.reduce(
+                        (acc, s) => acc + parseFloat(s.price || 0),
+                        0
+                      ) / group.services.length
+                    ).toFixed(2)
+                  : "0.00",
+              }));
+              setServiceGroups(updatedData);
+            }
+          } catch (err) {
+            console.error("Fetch error:", err);
+          }
+        };
 
-        setServiceGroups(updatedGroups);
+        await fetchServiceGroups();
 
-        // ✅ Also sync `selectedGroup` so modal/table updates immediately
-        setSelectedGroup(
-          updatedGroups.find(
-            (g) =>
-              (g.id || g.group_id) ===
-              (selectedGroup.id || selectedGroup.group_id)
-          )
-        );
+        // If adding from All Services tab, also refetch services
+        if (activeTab === "all-services") {
+          await fetchAllServices();
+        }
 
-        setIsAddModalOpen(false); // Close modal
+        // Reset form
+        setNewService({
+          name: "",
+          price: "",
+          duration: "",
+          description: "",
+          group_id: null,
+        });
+        setSelectedGroupForService(null);
+        setIsAddModalOpen(false);
         toast.success(`Service "${newService.name}" added successfully!`);
       } else {
         console.error("Error adding service:", result.message);
@@ -960,12 +988,7 @@ export default function ServiceGroupsPage() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                <Link
-                  href="/profiles"
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 w-full text-gray-700"
-                >
-                  <User size={16} /> Profile
-                </Link>
+    
                 <Link
                   href="/roles"
                   className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 w-full text-gray-700"
@@ -1281,8 +1304,13 @@ export default function ServiceGroupsPage() {
                 if (activeTab === "service-groups") {
                   setIsAddGroupModalOpen(true);
                 } else {
-                  // Handle add service logic here
-                  setIsAddModalOpen(true);
+                  // For All Services tab, check if there's a selected group
+                  if (!selectedGroup) {
+                    setIsAddModalOpen(true);
+                  } else {
+                    // If there's a selected group from the panel, open modal
+                    setIsAddModalOpen(true);
+                  }
                 }
               }}
               className="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-lg transition-colors font-medium shadow-md hover:shadow-lg"
@@ -1565,6 +1593,46 @@ export default function ServiceGroupsPage() {
                     Add New Service
                   </h2>
                   <div className="space-y-4">
+                    {/* Show group selector when no group is selected (e.g., from All Services tab) */}
+                    {!selectedGroup && !selectedGroupForService && (
+                      <div>
+                        <label className="block text-sm font-medium mb-2 text-gray-700">
+                          Service Group <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={newService.group_id || ""}
+                          onChange={(e) => {
+                            const selectedId = e.target.value;
+                            const group = serviceGroups.find(
+                              (g) => (g.id || g.group_id).toString() === selectedId
+                            );
+                            setSelectedGroupForService(group);
+                            setNewService({
+                              ...newService,
+                              group_id: selectedId,
+                            });
+                          }}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          required
+                        >
+                          <option value="">Select a group</option>
+                          {serviceGroups.map((group) => (
+                            <option key={group.id || group.group_id} value={group.id || group.group_id}>
+                              {group.group_name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    
+                    {/* Show selected group info when in Service Groups tab */}
+                    {selectedGroup && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <label className="text-xs font-medium text-blue-600 uppercase">Group</label>
+                        <p className="text-sm font-semibold text-blue-900">{selectedGroup.group_name}</p>
+                      </div>
+                    )}
+                    
                     <div>
                       <label className="block text-sm font-medium mb-2 text-gray-700">
                         Service Name
@@ -1618,7 +1686,17 @@ export default function ServiceGroupsPage() {
                   </div>
                   <div className="flex justify-end space-x-3 mt-6">
                     <motion.button
-                      onClick={() => setIsAddModalOpen(false)}
+                      onClick={() => {
+                        setIsAddModalOpen(false);
+                        setNewService({
+                          name: "",
+                          price: "",
+                          duration: "",
+                          description: "",
+                          group_id: null,
+                        });
+                        setSelectedGroupForService(null);
+                      }}
                       className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}

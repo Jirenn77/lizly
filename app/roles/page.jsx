@@ -64,7 +64,7 @@ const [allPermissions, setAllPermissions] = useState([]);
 
 
 useEffect(() => {
-  fetch("http://localhost/API/permissions.php")
+  fetch("https://api.lizlyskincare.sbs/permissions.php")
     .then(res => res.json())
     .then(data => {
       if (data.success) {
@@ -554,11 +554,6 @@ useEffect(() => {
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Link href="/profiles">
-                    <button className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 w-full text-left text-gray-700">
-                      <User size={16} /> Profile
-                    </button>
-                  </Link>
                   <Link href="/roles">
                     <button className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 w-full text-left text-gray-700">
                       <Settings size={16} /> Settings
